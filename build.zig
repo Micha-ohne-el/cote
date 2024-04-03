@@ -13,6 +13,8 @@ pub fn build(b: *std.Build) void {
         .optimize = flags.optimize,
     });
 
+    addDependencies(b, exe, flags);
+
     b.installArtifact(exe);
 
     addRunStep(b, exe);
@@ -30,6 +32,11 @@ fn addFlags(b: *std.Build) Flags {
         .target = b.standardTargetOptions(.{}),
         .optimize = b.standardOptimizeOption(.{}),
     };
+}
+
+fn addDependencies(b: *std.Build, c: *std.Build.Step.Compile, args: anytype) void {
+    const yaml = b.dependency("yaml", args);
+    c.addModule("yaml", yaml.module("yaml"));
 }
 
 fn addRunStep(b: *std.Build, c: *std.Build.Step.Compile) void {

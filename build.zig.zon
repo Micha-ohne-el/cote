@@ -1,0 +1,11 @@
+.{
+    .name = "cote",
+    .description = "Composable Terminal Editor",
+    .version = "0.0.0",
+    .dependencies = .{
+        .yaml = .{
+            .url = "https://github.com/kubkon/zig-yaml/archive/1ed4925bed911b73a189526a6ad82bd8c5c2079a.tar.gz",
+            .hash = "1220aca2e672e44abada59f310acd3f1cd292192c8bd66ae5b411234b172a03ffaa3",
+        },
+    },
+}
