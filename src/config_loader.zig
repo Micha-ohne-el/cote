@@ -7,6 +7,7 @@ const log = std.log.scoped(.config_loader);
 
 pub fn loadConfig(path: []const u8) !Config {
     log.debug("Loading config...", .{});
+    defer log.debug("Loading config finshed.", .{});
     log.debug("Config path: {s}", .{path});
 
     const allocator = std.heap.page_allocator;
@@ -19,6 +20,7 @@ pub fn loadConfig(path: []const u8) !Config {
 
 fn parse(allocator: std.mem.Allocator, config_string: []u8) !Config {
     log.debug("Parsing config...", .{});
+    defer log.debug("Parsing config finished.", .{});
 
     var untyped = try Yaml.load(allocator, config_string);
     defer untyped.deinit();
