@@ -11,7 +11,9 @@ pub fn readFileCompletely(allocator: std.mem.Allocator, path: []const u8) ![]u8 
     const file = try pwd.openFile(path, .{});
     defer file.close();
 
-    return file.reader().readAllAlloc(allocator, std.math.maxInt(usize));
+    const content = try file.reader().readAllAlloc(allocator, std.math.maxInt(usize));
+    log.debug("Read {d} bytes.", .{content.len});
+    return content;
 }
 
 fn getRealPath(dir: std.fs.Dir, path: []const u8) ![]u8 {
