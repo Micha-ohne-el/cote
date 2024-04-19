@@ -1,12 +1,25 @@
 const std = @import("std");
 const file_io = @import("./file_io.zig");
 const Config = @import("./Config.zig");
+const Component = @import("./Component.zig");
+const test_component = @import("./test_component.zig");
 const Yaml = @import("yaml").Yaml;
 
 pub fn main() !void {
-    var config = try loadConfig();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
 
-    std.debug.print("{d}", .{config.test_prop});
+    var config = try loadConfig();
+    var components = try loadComponents(allocator);
+    defer allocator.free(components);
+
+    std.log.debug("test prop: {d}", .{config.test_prop});
+
+    for (components) |component| {
+        if (component.onComponentsReady) |onComponentsReady| {
+            onComponentsReady(&component);
+        }
+    }
 }
 
 fn loadConfig() !Config {
@@ -24,4 +37,13 @@ fn parseConfig(allocator: std.mem.Allocator, config_string: []u8) !Config {
     defer untyped.deinit();
 
     return try untyped.parse(Config);
+}
+
+/// caller owns the memory returned.
+fn loadComponents(allocator: std.mem.Allocator) ![]Component {
+    var components = std.ArrayList(Component).init(allocator);
+
+    try components.append(test_component.component);
+
+    return components.toOwnedSlice();
 }
