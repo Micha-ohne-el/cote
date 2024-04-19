@@ -6,7 +6,7 @@ const log = std.log.scoped(.file_io);
 pub fn readFileCompletely(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
     const pwd = std.fs.cwd();
 
-    if (builtin.mode == .Debug) log.debug("Reading the entirety of file: {s}", .{try getRealPath(pwd, path)});
+    log.debug("Reading the entirety of file: {s}", .{try getRealPath(pwd, path)});
 
     const file = try pwd.openFile(path, .{});
     defer file.close();
