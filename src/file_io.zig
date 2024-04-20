@@ -16,7 +16,7 @@ pub fn readFileCompletely(allocator: std.mem.Allocator, path: []const u8) ![]u8 
     return content;
 }
 
-fn getRealPath(dir: std.fs.Dir, path: []const u8) ![]u8 {
+pub fn getRealPath(dir: std.fs.Dir, path: []const u8) ![]u8 {
     var buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
 
     return try dir.realpath(path, &buf);
