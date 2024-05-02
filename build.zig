@@ -23,7 +23,7 @@ pub fn build(b: *std.Build) void {
 }
 
 const Flags = struct {
-    target: std.zig.CrossTarget,
+    target: std.Build.ResolvedTarget,
     optimize: std.builtin.Mode,
 };
 
@@ -36,7 +36,7 @@ fn addFlags(b: *std.Build) Flags {
 
 fn addDependencies(b: *std.Build, c: *std.Build.Step.Compile, args: anytype) void {
     const yaml = b.dependency("yaml", args);
-    c.addModule("yaml", yaml.module("yaml"));
+    c.root_module.addImport("yaml", yaml.module("yaml"));
 }
 
 fn addRunStep(b: *std.Build, c: *std.Build.Step.Compile) void {

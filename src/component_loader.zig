@@ -32,7 +32,7 @@ fn findPotentialComponents(allocator: std.mem.Allocator) ![]fs.File {
     var files = std.ArrayList(fs.File).init(allocator);
 
     for (paths) |path| {
-        const components_dir = fs.cwd().openIterableDir(path, .{}) catch |err| switch (err) {
+        const components_dir = fs.cwd().openDir(path, .{ .iterate = true }) catch |err| switch (err) {
             fs.Dir.OpenError.FileNotFound => {
                 log.debug("Skipping path '{s}' because it doesn't exist.", .{path});
                 continue;
@@ -50,15 +50,15 @@ fn findPotentialComponents(allocator: std.mem.Allocator) ![]fs.File {
     return files.toOwnedSlice();
 }
 
-fn findPotentialComponentsInDir(array_list: *std.ArrayList(fs.File), dir: fs.IterableDir) !void {
-    log.debug("Searching for components in '{s}'...", .{try getRealPath(dir.dir, ".")});
+fn findPotentialComponentsInDir(array_list: *std.ArrayList(fs.File), dir: fs.Dir) !void {
+    log.debug("Searching for components in '{s}'...", .{try getRealPath(dir, ".")});
     var iterator = dir.iterate();
 
     while (true) {
-        const entry: fs.IterableDir.Entry = try iterator.next() orelse break;
+        const entry: fs.Dir.Entry = try iterator.next() orelse break;
 
         log.debug("Found file '{s}'.", .{entry.name});
 
-        try array_list.append(try dir.dir.openFile(entry.name, .{}));
+        try array_list.append(try dir.openFile(entry.name, .{}));
     }
 }
