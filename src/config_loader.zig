@@ -5,12 +5,10 @@ const file_io = @import("./file_io.zig");
 
 const log = std.log.scoped(.config_loader);
 
-pub fn loadConfig(path: []const u8) !Config {
+pub fn loadConfig(allocator: std.mem.Allocator, path: []const u8) !Config {
     log.debug("Loading config...", .{});
     defer log.debug("Loading config finshed.", .{});
     log.debug("Config path: {s}", .{path});
-
-    const allocator = std.heap.page_allocator;
 
     const string = try file_io.readFileCompletely(allocator, path);
     defer allocator.free(string);

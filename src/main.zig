@@ -12,7 +12,7 @@ pub fn main() !void {
     const allocator = gpa.allocator();
 
     const config_path = "./test-config.yaml";
-    const config = try config_loader.loadConfig(config_path);
+    const config = try config_loader.loadConfig(allocator, config_path);
 
     const components = try component_loader.loadComponents(allocator);
     defer allocator.free(components);
