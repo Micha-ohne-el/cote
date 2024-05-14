@@ -1,0 +1,5 @@
+components:
+  - abi_version: 1
+    name: "test component 1"
+  - abi_version: 1
+    name: "another test component"

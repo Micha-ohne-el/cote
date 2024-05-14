@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 
 const log = std.log.scoped(.file_io);
 
-pub fn readFileCompletely(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
+pub fn readFileCompletelyFromPath(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
     const pwd = std.fs.cwd();
 
     log.debug("Reading the entirety of file: {s}", .{try getRealPath(pwd, path)});
@@ -11,6 +11,10 @@ pub fn readFileCompletely(allocator: std.mem.Allocator, path: []const u8) ![]u8 
     const file = try pwd.openFile(path, .{});
     defer file.close();
 
+    return readFileCompletely(allocator, file);
+}
+
+pub fn readFileCompletely(allocator: std.mem.Allocator, file: std.fs.File) ![]u8 {
     const content = try file.reader().readAllAlloc(allocator, std.math.maxInt(usize));
     log.debug("Read {d} bytes.", .{content.len});
     return content;

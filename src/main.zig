@@ -7,6 +7,14 @@ const component_loader = @import("./component_loader.zig");
 
 const log = std.log;
 
+pub const std_options = std.Options{
+    .fmt_max_depth = 20,
+    .log_scope_levels = &[_]std.log.ScopeLevel{
+        .{ .scope = .parse, .level = .info },
+        .{ .scope = .tokenizer, .level = .info },
+    },
+};
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
@@ -14,14 +22,17 @@ pub fn main() !void {
     const config_path = "./test-config.yaml";
     const config = try config_loader.loadConfig(allocator, config_path);
 
-    const components = try component_loader.loadComponents(allocator);
+    const components_path = "./components";
+    const components = try component_loader.loadComponents(allocator, components_path);
     defer allocator.free(components);
 
     log.debug("test prop: {d}", .{config.test_prop});
 
     for (components) |component| {
-        if (component.onComponentsReady) |onComponentsReady| {
-            onComponentsReady(&component);
-        }
+        log.info("Loaded component: {any}", .{component});
+
+        //if (component.onComponentsReady) |onComponentsReady| {
+        //    onComponentsReady(&component);
+        //}
     }
 }

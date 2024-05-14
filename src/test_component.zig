@@ -5,7 +5,7 @@ const log = std.log.scoped(.test_component);
 
 pub const component = Component{
     .abi_version = 1,
-    .name = Component.name("test component"),
+    .name = Component.nameComptime("test component"),
     .onComponentsReady = onComponentsReady,
 };
 
