@@ -19,7 +19,7 @@ pub fn loadComponents(allocator: std.mem.Allocator, path: []const u8) ![]Compone
     defer index_file.close();
     const index = try loadIndex(allocator, index_file);
 
-    return index.components;
+    return index.component_metadata;
 }
 
 fn openIndexFile(dir: fs.Dir) !fs.File {
@@ -35,10 +35,10 @@ fn openIndexFile(dir: fs.Dir) !fs.File {
 }
 
 const Index = struct {
-    components: []Component.Metadata,
+    component_metadata: []Component.Metadata,
 };
 
-const UnsafeIndex = struct {
+const IndexConfig = struct {
     components: []struct {
         abi_version: u8,
         name: []const u8,
@@ -62,28 +62,28 @@ fn parseIndex(allocator: std.mem.Allocator, index_string: []u8) !Index {
     var untyped = try Yaml.load(allocator, index_string);
     defer untyped.deinit();
 
-    return try sanitizeIndex(allocator, try untyped.parse(UnsafeIndex));
+    return try sanitizeIndex(allocator, try untyped.parse(IndexConfig));
 }
 
-fn sanitizeIndex(allocator: std.mem.Allocator, unsafe_index: UnsafeIndex) !Index {
+fn sanitizeIndex(allocator: std.mem.Allocator, index_config: IndexConfig) !Index {
     log.debug("Sanitizing index...", .{});
     defer log.debug("Sanitizing index finished.", .{});
 
-    var components = std.ArrayList(Component.Metadata).init(allocator);
-    defer components.deinit();
+    var component_metadatas = std.ArrayList(Component.Metadata).init(allocator);
+    defer component_metadatas.deinit();
 
-    for (unsafe_index.components) |unsafe_component| {
-        log.debug("Sanitizing component: {s}", .{unsafe_component.name});
+    for (index_config.components) |config_component| {
+        log.debug("Sanitizing component: {s}", .{config_component.name});
 
         const component = Component.Metadata{
-            .abi_version = unsafe_component.abi_version,
-            .name = try Component.name(unsafe_component.name),
+            .abi_version = config_component.abi_version,
+            .name = try Component.name(config_component.name),
         };
 
-        try components.append(component);
+        try component_metadatas.append(component);
     }
 
     return Index{
-        .components = try components.toOwnedSlice(),
+        .component_metadata = try component_metadatas.toOwnedSlice(),
     };
 }
