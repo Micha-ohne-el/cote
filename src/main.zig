@@ -36,3 +36,7 @@ pub fn main() !void {
         //}
     }
 }
+
+test {
+    _ = @import("./Version.zig");
+}

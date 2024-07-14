@@ -5,6 +5,7 @@ const file_io = @import("./file_io.zig");
 const Component = @import("./Component.zig");
 const test_component = @import("./test_component.zig");
 const getRealPath = @import("./file_io.zig").getRealPath;
+const Version = @import("./Version.zig");
 
 const log = std.log.scoped(.component_loader);
 
@@ -40,7 +41,9 @@ const Index = struct {
 
 const IndexConfig = struct {
     components: []struct {
-        abi_version: u8,
+        version: Version,
+        min_cote_version: Version,
+        max_cote_version: Version,
         name: []const u8,
     },
 };
@@ -76,7 +79,9 @@ fn sanitizeIndex(allocator: std.mem.Allocator, index_config: IndexConfig) !Index
         log.debug("Sanitizing component: {s}", .{config_component.name});
 
         const component = Component.Metadata{
-            .abi_version = config_component.abi_version,
+            .version = config_component.version,
+            .min_cote_version = config_component.min_cote_version,
+            .max_cote_version = config_component.max_cote_version,
             .name = try Component.name(config_component.name),
         };
 
