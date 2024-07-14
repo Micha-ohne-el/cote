@@ -5,8 +5,8 @@
     .paths = .{""},
     .dependencies = .{
         .yaml = .{
-            .url = "https://github.com/kubkon/zig-yaml/archive/0daa4534707da77f8bf7032376c96e4719954959.tar.gz",
-            .hash = "122048d8af4b11b51bd355e7e0ca4601a9ca5c6afa93d86abd526ca8ae5a855b0e49",
+            .url = "https://github.com/kubkon/zig-yaml/archive/beddd5da24de91d430ca7028b00986f7745b13e9.tar.gz",
+            .hash = "1220841471bd4891cbb199d27cc5e7e0fb0a5b7c5388a70bd24fa3eb7285755c396c",
         },
     },
 }
