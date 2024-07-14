@@ -6,11 +6,12 @@ const Component = @import("./Component.zig");
 const test_component = @import("./test_component.zig");
 const getRealPath = @import("./file_io.zig").getRealPath;
 const Version = @import("./Version.zig");
+const ComponentName = @import("./ComponentName.zig");
 
 const log = std.log.scoped(.component_loader);
 
 /// caller owns the memory returned.
-pub fn loadComponents(allocator: std.mem.Allocator, path: []const u8) ![]Component.Metadata { // TODO: This should return actual Components (populate them by loading the lib file).
+pub fn loadComponents(allocator: std.mem.Allocator, path: []const u8) ![]Component {
     log.debug("Loading components...", .{});
     defer log.debug("Loading components finished.", .{});
 
@@ -20,7 +21,9 @@ pub fn loadComponents(allocator: std.mem.Allocator, path: []const u8) ![]Compone
     defer index_file.close();
     const index = try loadIndex(allocator, index_file);
 
-    return index.component_metadata;
+    const components = try loadComponentFiles(allocator, index, dir);
+
+    return components;
 }
 
 fn openIndexFile(dir: fs.Dir) !fs.File {
@@ -82,7 +85,7 @@ fn sanitizeIndex(allocator: std.mem.Allocator, index_config: IndexConfig) !Index
             .version = config_component.version,
             .min_cote_version = config_component.min_cote_version,
             .max_cote_version = config_component.max_cote_version,
-            .name = try Component.name(config_component.name),
+            .name = try ComponentName.from(config_component.name),
         };
 
         try component_metadatas.append(component);
@@ -91,4 +94,24 @@ fn sanitizeIndex(allocator: std.mem.Allocator, index_config: IndexConfig) !Index
     return Index{
         .component_metadata = try component_metadatas.toOwnedSlice(),
     };
+}
+
+fn loadComponentFiles(allocator: std.mem.Allocator, index: Index, dir: std.fs.Dir) ![]Component {
+    var components = std.ArrayList(Component).init(allocator);
+    defer components.deinit();
+
+    for (index.component_metadata) |meta| {
+        const path = try dir.realpathAlloc(allocator, meta.name.slice());
+        defer allocator.free(path);
+
+        var dynlib = try std.DynLib.open(path);
+
+        const component = dynlib.lookup(*Component, "component") orelse return error.InvalidComponent;
+
+        if (!component.metadata.version.equals(meta.version)) return error.ComponentDiffersFromIndex;
+
+        try components.append(component.*);
+    }
+
+    return components.toOwnedSlice();
 }

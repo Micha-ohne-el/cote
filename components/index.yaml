@@ -11,18 +11,4 @@ components:
       major: 255
       minor: 255
       patch: 255
-    name: "test component 1"
-
-  - version:
-      major: 0
-      minor: 0
-      patch: 0
-    min_cote_version:
-      major: 0
-      minor: 0
-      patch: 0
-    max_cote_version:
-      major: 255
-      minor: 255
-      patch: 255
-    name: "another test component"
+    name: "test-component"

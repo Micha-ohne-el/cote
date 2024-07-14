@@ -17,6 +17,7 @@ pub const std_options = std.Options{
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer log.debug("gpa.deinit() => {s}", .{@tagName(gpa.deinit())});
     const allocator = gpa.allocator();
 
     const config_path = "./test-config.yaml";
