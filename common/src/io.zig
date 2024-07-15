@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const log = std.log.scoped(.file_io);
+const log = std.log.scoped(.io);
 
 pub fn readFileCompletelyFromPath(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
     const pwd = std.fs.cwd();

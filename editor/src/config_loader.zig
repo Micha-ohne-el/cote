@@ -1,7 +1,8 @@
 const std = @import("std");
+const common = @import("common");
 const Yaml = @import("yaml").Yaml;
-const Config = @import("./Config.zig");
-const file_io = @import("./file_io.zig");
+const Config = common.Config;
+const io = common.io;
 
 const log = std.log.scoped(.config_loader);
 
@@ -10,7 +11,7 @@ pub fn loadConfig(allocator: std.mem.Allocator, path: []const u8) !Config {
     defer log.debug("Loading config finshed.", .{});
     log.debug("Config path: {s}", .{path});
 
-    const string = try file_io.readFileCompletelyFromPath(allocator, path);
+    const string = try io.readFileCompletelyFromPath(allocator, path);
     defer allocator.free(string);
 
     return try parse(allocator, string);

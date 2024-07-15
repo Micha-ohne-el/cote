@@ -2,23 +2,42 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build program",
+      "label": "build editor",
       "type": "shell",
       "command": "zig build",
       "problemMatcher": [],
       "group": {
         "kind": "build",
         "isDefault": true
+      },
+      "options": {
+        "cwd": "editor"
       }
     },
     {
-      "label": "build tests",
+      "label": "build editor tests",
       "type": "shell",
-      "command": "zig test --test-no-exec -femit-bin=zig-out/bin/cote-test -Doptimize=Debug src/main.zig",
+      "command": "zig test --test-no-exec -femit-bin=zig-out/bin/test -Doptimize=Debug src/main.zig",
       "problemMatcher": [],
       "group": {
         "kind": "build",
         "isDefault": false
+      },
+      "options": {
+        "cwd": "editor"
+      }
+    },
+    {
+      "label": "build common tests",
+      "type": "shell",
+      "command": "zig test --test-no-exec -femit-bin=zig-out/bin/test -Doptimize=Debug src/root.zig",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "options": {
+        "cwd": "common"
       }
     }
   ]

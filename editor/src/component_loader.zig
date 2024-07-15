@@ -1,12 +1,11 @@
 const std = @import("std");
-const fs = std.fs;
+const common = @import("common");
 const Yaml = @import("yaml").Yaml;
-const file_io = @import("./file_io.zig");
-const Component = @import("./Component.zig");
-const test_component = @import("./test_component.zig");
-const getRealPath = @import("./file_io.zig").getRealPath;
-const Version = @import("./Version.zig");
-const ComponentName = @import("./ComponentName.zig");
+const io = common.io;
+const Component = common.Component;
+const getRealPath = io.getRealPath;
+const Version = common.Version;
+const ComponentName = common.ComponentName;
 
 const log = std.log.scoped(.component_loader);
 
@@ -15,7 +14,7 @@ pub fn loadComponents(allocator: std.mem.Allocator, path: []const u8) ![]Compone
     log.debug("Loading components...", .{});
     defer log.debug("Loading components finished.", .{});
 
-    const dir = try fs.cwd().openDir(path, .{ .iterate = true });
+    const dir = try std.fs.cwd().openDir(path, .{ .iterate = true });
 
     const index_file = try openIndexFile(dir);
     defer index_file.close();
@@ -26,12 +25,12 @@ pub fn loadComponents(allocator: std.mem.Allocator, path: []const u8) ![]Compone
     return components;
 }
 
-fn openIndexFile(dir: fs.Dir) !fs.File {
+fn openIndexFile(dir: std.fs.Dir) !std.fs.File {
     return dir.openFile("index.yaml", .{}) catch |err| {
         switch (err) {
-            fs.File.OpenError.FileNotFound => log.warn("No components were loaded because no index.yaml was found in {s}.", .{try file_io.getRealPath(dir, ".")}),
-            fs.File.OpenError.AccessDenied => log.warn("No components were loaded because '{s}' could not be opened (access denied).", .{try file_io.getRealPath(dir, "index.yaml")}),
-            else => log.warn("No components were loaded because '{s}' could not be opened (not sure why).", .{try file_io.getRealPath(dir, "index.yaml")}),
+            std.fs.File.OpenError.FileNotFound => log.warn("No components were loaded because no index.yaml was found in {s}.", .{try io.getRealPath(dir, ".")}),
+            std.fs.File.OpenError.AccessDenied => log.warn("No components were loaded because '{s}' could not be opened (access denied).", .{try io.getRealPath(dir, "index.yaml")}),
+            else => log.warn("No components were loaded because '{s}' could not be opened (not sure why).", .{try io.getRealPath(dir, "index.yaml")}),
         }
 
         return err;
@@ -51,11 +50,11 @@ const IndexConfig = struct {
     },
 };
 
-fn loadIndex(allocator: std.mem.Allocator, file: fs.File) !Index {
+fn loadIndex(allocator: std.mem.Allocator, file: std.fs.File) !Index {
     log.debug("Loading index file...", .{});
     defer log.debug("Loading index finished.", .{});
 
-    const string = try file_io.readFileCompletely(allocator, file);
+    const string = try io.readFileCompletely(allocator, file);
     defer allocator.free(string);
 
     return try parseIndex(allocator, string);

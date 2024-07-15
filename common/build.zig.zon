@@ -1,0 +1,11 @@
+.{
+    .name = "common",
+    .description = "Things common to cote's editor and its components",
+    .version = "0.0.0",
+    .paths = .{
+        "src/",
+        "build.zig",
+        "build.zig.zon",
+    },
+    .dependencies = .{},
+}
