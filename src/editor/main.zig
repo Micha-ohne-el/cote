@@ -21,10 +21,10 @@ pub fn main() !void {
     defer log.debug("gpa.deinit() => {s}", .{@tagName(gpa.deinit())});
     const allocator = gpa.allocator();
 
-    const config_path = "../.test/test-config.yaml";
+    const config_path = ".test/test-config.yaml";
     const config = try config_loader.loadConfig(allocator, config_path);
 
-    const components_path = "../.test/components";
+    const components_path = ".test/components";
     const components = try component_loader.loadComponents(allocator, components_path);
     defer allocator.free(components);
 

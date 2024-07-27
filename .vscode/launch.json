@@ -2,31 +2,31 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Editor Program",
+      "name": "debug run-editor",
       "type": "gdb",
       "request": "launch",
-      "target": "./editor/zig-out/bin/cote",
+      "target": "./zig-out/bin/cote",
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
-      "preLaunchTask": "build editor"
+      "preLaunchTask": "install"
     },
     {
-      "name": "Debug Editor Tests",
+      "name": "Debug test-editor",
       "type": "gdb",
       "request": "launch",
-      "target": "./editor/zig-out/bin/test",
+      "target": "./zig-out/bin/test-editor",
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
-      "preLaunchTask": "build editor tests"
+      "preLaunchTask": "install"
     },
     {
-      "name": "Debug Common Tests",
+      "name": "Debug test-common",
       "type": "gdb",
       "request": "launch",
-      "target": "./common/zig-out/bin/test",
+      "target": "./zig-out/bin/test-common",
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
-      "preLaunchTask": "build common tests"
+      "preLaunchTask": "install"
     }
   ]
 }

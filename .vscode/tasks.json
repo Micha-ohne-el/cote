@@ -2,42 +2,13 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build editor",
+      "label": "install",
       "type": "shell",
-      "command": "zig build",
+      "command": "zig build install",
       "problemMatcher": [],
       "group": {
         "kind": "build",
         "isDefault": true
-      },
-      "options": {
-        "cwd": "editor"
-      }
-    },
-    {
-      "label": "build editor tests",
-      "type": "shell",
-      "command": "zig test --test-no-exec -femit-bin=zig-out/bin/test -Doptimize=Debug src/main.zig",
-      "problemMatcher": [],
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      },
-      "options": {
-        "cwd": "editor"
-      }
-    },
-    {
-      "label": "build common tests",
-      "type": "shell",
-      "command": "zig test --test-no-exec -femit-bin=zig-out/bin/test -Doptimize=Debug src/root.zig",
-      "problemMatcher": [],
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      },
-      "options": {
-        "cwd": "common"
       }
     }
   ]
