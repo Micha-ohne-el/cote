@@ -6,6 +6,13 @@ major: u8,
 minor: u8,
 patch: u8,
 
+/// comptime version of `parse`.
+/// Always returns a `Version` so that catching is not necessary.
+/// Throws a compile error on failure.
+pub fn of(comptime version_string: []const u8) Version {
+    return parse(version_string) catch @compileError("Invalid version string");
+}
+
 pub fn parse(version_string: []const u8) !Version {
     var it = std.mem.splitScalar(u8, version_string, '.');
     const result = Version{
@@ -104,6 +111,25 @@ test parse {
     try std.testing.expectEqual(error.PatchVersionInvalid, Version.parse("1.2.+3"));
     try std.testing.expectEqual(error.MajorVersionInvalid, Version.parse(" 1.2.3"));
     try std.testing.expectEqual(error.PatchVersionInvalid, Version.parse("1.2.3 "));
+}
+
+test of {
+    comptime {
+        const v1 = Version.of("0.0.0");
+        try std.testing.expectEqual(0, v1.major);
+        try std.testing.expectEqual(0, v1.minor);
+        try std.testing.expectEqual(0, v1.patch);
+
+        const v2 = Version.of("1.2.3");
+        try std.testing.expectEqual(1, v2.major);
+        try std.testing.expectEqual(2, v2.minor);
+        try std.testing.expectEqual(3, v2.patch);
+
+        const v3 = Version.of("012.123.234");
+        try std.testing.expectEqual(12, v3.major);
+        try std.testing.expectEqual(123, v3.minor);
+        try std.testing.expectEqual(234, v3.patch);
+    }
 }
 
 test equals {
