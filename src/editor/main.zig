@@ -32,6 +32,7 @@ pub fn main() !void {
 
     for (components) |component| {
         log.info("Loaded component: {any}", .{component});
+        log.info("Loaded component: {s}", .{component.metadata.name});
 
         //if (component.onComponentsReady) |onComponentsReady| {
         //    onComponentsReady(&component);

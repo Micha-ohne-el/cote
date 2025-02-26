@@ -1,16 +1,17 @@
 const std = @import("std");
 const common = @import("common");
 const Yaml = @import("yaml").Yaml;
+const ComponentConnection = @import("./ComponentConnection.zig");
 const io = common.io;
 const Component = common.Component;
-const getRealPath = io.getRealPath;
+const RealPath = io.RealPath;
 const Version = common.Version;
 const ComponentName = common.ComponentName;
 
 const log = std.log.scoped(.component_loader);
 
 /// caller owns the memory returned.
-pub fn loadComponents(allocator: std.mem.Allocator, path: []const u8) ![]Component {
+pub fn loadComponents(allocator: std.mem.Allocator, path: []const u8) ![]ComponentConnection {
     log.debug("Loading components...", .{});
     defer log.debug("Loading components finished.", .{});
 
@@ -18,19 +19,38 @@ pub fn loadComponents(allocator: std.mem.Allocator, path: []const u8) ![]Compone
 
     const index_file = try openIndexFile(dir);
     defer index_file.close();
-    const index = try loadIndex(allocator, index_file);
+    var index = try loadIndex(allocator, index_file);
+    defer index.deinit();
 
-    const components = try loadComponentFiles(allocator, index, dir);
+    var component_map = try loadComponentFiles(allocator, index, dir);
+    defer component_map.deinit();
+    var component_iter = component_map.iterator();
 
-    return components;
+    var connections = std.ArrayList(ComponentConnection).init(allocator);
+    defer connections.deinit();
+
+    while (component_iter.next()) |entry| {
+        const meta = entry.key_ptr.*;
+        var connection = entry.value_ptr.*;
+
+        if (!connection.component.metadata.version.equals(meta.version)) {
+            log.warn("Component '{s}' will be ignored because it is declared to be version {} but presents as version {}.", .{ meta.name, meta.version, connection.component.metadata.version });
+            connection.close();
+            continue;
+        }
+
+        try connections.append(connection);
+    }
+
+    return connections.toOwnedSlice();
 }
 
 fn openIndexFile(dir: std.fs.Dir) !std.fs.File {
     return dir.openFile("index.yaml", .{}) catch |err| {
         switch (err) {
-            std.fs.File.OpenError.FileNotFound => log.warn("No components were loaded because no index.yaml was found in {s}.", .{try io.getRealPath(dir, ".")}),
-            std.fs.File.OpenError.AccessDenied => log.warn("No components were loaded because '{s}' could not be opened (access denied).", .{try io.getRealPath(dir, "index.yaml")}),
-            else => log.warn("No components were loaded because '{s}' could not be opened (not sure why).", .{try io.getRealPath(dir, "index.yaml")}),
+            std.fs.File.OpenError.FileNotFound => log.warn("No components were loaded because no index.yaml was found in {s}.", .{RealPath.of(dir, @constCast("."))}),
+            std.fs.File.OpenError.AccessDenied => log.warn("No components were loaded because '{s}' could not be opened (access denied).", .{RealPath.of(dir, @constCast("index.yaml"))}),
+            else => log.warn("No components were loaded because '{s}' could not be opened (not sure why).", .{RealPath.of(dir, @constCast("index.yaml"))}),
         }
 
         return err;
@@ -38,7 +58,11 @@ fn openIndexFile(dir: std.fs.Dir) !std.fs.File {
 }
 
 const Index = struct {
-    component_metadata: []Component.Metadata,
+    component_metadatas: std.ArrayList(Component.Metadata),
+
+    pub fn deinit(this: *@This()) void {
+        this.component_metadatas.deinit();
+    }
 };
 
 const IndexConfig = struct {
@@ -75,7 +99,6 @@ fn sanitizeIndex(allocator: std.mem.Allocator, index_config: IndexConfig) !Index
     defer log.debug("Sanitizing index finished.", .{});
 
     var component_metadatas = std.ArrayList(Component.Metadata).init(allocator);
-    defer component_metadatas.deinit();
 
     for (index_config.components) |config_component| {
         log.debug("Sanitizing component: {s}", .{config_component.name});
@@ -84,33 +107,41 @@ fn sanitizeIndex(allocator: std.mem.Allocator, index_config: IndexConfig) !Index
             .version = config_component.version,
             .min_cote_version = config_component.min_cote_version,
             .max_cote_version = config_component.max_cote_version,
-            .name = try ComponentName.from(config_component.name),
+            .name = try ComponentName.of(config_component.name),
         };
 
         try component_metadatas.append(component);
+
+        log.debug("Sanitizing component finished: {}", .{component});
     }
 
     return Index{
-        .component_metadata = try component_metadatas.toOwnedSlice(),
+        .component_metadatas = component_metadatas,
     };
 }
 
-fn loadComponentFiles(allocator: std.mem.Allocator, index: Index, dir: std.fs.Dir) ![]Component {
-    var components = std.ArrayList(Component).init(allocator);
-    defer components.deinit();
+fn loadComponentFiles(allocator: std.mem.Allocator, index: Index, dir: std.fs.Dir) !std.AutoHashMap(Component.Metadata, ComponentConnection) {
+    var components = std.AutoHashMap(Component.Metadata, ComponentConnection).init(allocator);
 
-    for (index.component_metadata) |meta| {
-        const path = try dir.realpathAlloc(allocator, meta.name.slice());
+    for (index.component_metadatas.items) |meta| {
+        log.debug("Loading component: {any}", .{meta.name});
+
+        const path = try dir.realpathAlloc(allocator, meta.name.data[0..meta.name.length()]);
         defer allocator.free(path);
+
+        log.debug("Loading component at fully resolved path: {s}", .{path});
 
         var dynlib = try std.DynLib.open(path);
 
         const component = dynlib.lookup(*Component, "component") orelse return error.InvalidComponent;
 
-        if (!component.metadata.version.equals(meta.version)) return error.ComponentDiffersFromIndex;
+        try components.put(meta, ComponentConnection{
+            .component = component.*,
+            .dynlib = dynlib,
+        });
 
-        try components.append(component.*);
+        log.debug("Loading component finished: {any}", .{component});
     }
 
-    return components.toOwnedSlice();
+    return components;
 }
