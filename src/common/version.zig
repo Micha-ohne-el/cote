@@ -1,30 +1,77 @@
 const std = @import("std");
 
-const Version = @This();
+pub const Version = extern struct {
+    major: u8,
+    minor: u8,
+    patch: u8,
 
-major: u8,
-minor: u8,
-patch: u8,
+    /// comptime version of `parse`.
+    /// Always returns a `Version` so that catching is not necessary.
+    /// Throws a compile error on failure.
+    pub fn of(comptime version_string: []const u8) Version {
+        return parse(version_string) catch @compileError("Invalid version string");
+    }
 
-/// comptime version of `parse`.
-/// Always returns a `Version` so that catching is not necessary.
-/// Throws a compile error on failure.
-pub fn of(comptime version_string: []const u8) Version {
-    return parse(version_string) catch @compileError("Invalid version string");
-}
+    pub fn parse(version_string: []const u8) !Version {
+        var it = std.mem.splitScalar(u8, version_string, '.');
+        const result = Version{
+            .major = parsePart(it.first()) catch return error.MajorVersionInvalid,
+            .minor = parsePart(it.next() orelse return error.MinorVersionMissing) catch return error.MinorVersionInvalid,
+            .patch = parsePart(it.next() orelse return error.PatchVersionMissing) catch return error.PatchVersionInvalid,
+        };
 
-pub fn parse(version_string: []const u8) !Version {
-    var it = std.mem.splitScalar(u8, version_string, '.');
-    const result = Version{
-        .major = parsePart(it.first()) catch return error.MajorVersionInvalid,
-        .minor = parsePart(it.next() orelse return error.MinorVersionMissing) catch return error.MinorVersionInvalid,
-        .patch = parsePart(it.next() orelse return error.PatchVersionMissing) catch return error.PatchVersionInvalid,
-    };
+        if (it.next() != null) return error.TooManyVersionParts;
 
-    if (it.next() != null) return error.TooManyVersionParts;
+        return result;
+    }
 
-    return result;
-}
+    /// gets automatically called by std.fmt functions.
+    pub fn format(this: Version, comptime _: []const u8, _: std.fmt.FormatOptions, writer: std.io.AnyWriter) !void {
+        try std.fmt.format(writer, "{d}.{d}.{d}", .{ this.major, this.minor, this.patch });
+    }
+
+    pub fn equals(this: Version, other: Version) bool {
+        return this.major == other.major and this.minor == other.minor and this.patch == other.patch;
+    }
+
+    pub fn isGreater(this: Version, other: Version) bool {
+        if (this.major > other.major) return true;
+        if (this.major < other.major) return false;
+
+        if (this.minor > other.minor) return true;
+        if (this.minor < other.minor) return false;
+
+        if (this.patch > other.patch) return true;
+        if (this.patch < other.patch) return false;
+
+        return false;
+    }
+
+    pub fn isLess(this: Version, other: Version) bool {
+        if (this.major < other.major) return true;
+        if (this.major > other.major) return false;
+
+        if (this.minor < other.minor) return true;
+        if (this.minor > other.minor) return false;
+
+        if (this.patch < other.patch) return true;
+        if (this.patch > other.patch) return false;
+
+        return false;
+    }
+
+    pub fn isGreaterOrEqual(this: Version, other: Version) bool {
+        return this.isGreater(other) or this.equals(other);
+    }
+
+    pub fn isLessOrEqual(this: Version, other: Version) bool {
+        return this.isLess(other) or this.equals(other);
+    }
+
+    pub fn isIn(this: Version, min: Version, max: Version) bool {
+        return this.isGreaterOrEqual(min) and this.isLessOrEqual(max);
+    }
+};
 
 fn parsePart(part: []const u8) !u8 {
     return std.fmt.parseUnsigned(u8, part, 10) catch |err| switch (err) {
@@ -34,54 +81,7 @@ fn parsePart(part: []const u8) !u8 {
     };
 }
 
-/// gets automatically called by std.fmt functions.
-pub fn format(this: Version, comptime _: []const u8, _: std.fmt.FormatOptions, writer: std.io.AnyWriter) !void {
-    try std.fmt.format(writer, "{d}.{d}.{d}", .{ this.major, this.minor, this.patch });
-}
-
-pub fn equals(this: Version, other: Version) bool {
-    return this.major == other.major and this.minor == other.minor and this.patch == other.patch;
-}
-
-pub fn isGreater(this: Version, other: Version) bool {
-    if (this.major > other.major) return true;
-    if (this.major < other.major) return false;
-
-    if (this.minor > other.minor) return true;
-    if (this.minor < other.minor) return false;
-
-    if (this.patch > other.patch) return true;
-    if (this.patch < other.patch) return false;
-
-    return false;
-}
-
-pub fn isLess(this: Version, other: Version) bool {
-    if (this.major < other.major) return true;
-    if (this.major > other.major) return false;
-
-    if (this.minor < other.minor) return true;
-    if (this.minor > other.minor) return false;
-
-    if (this.patch < other.patch) return true;
-    if (this.patch > other.patch) return false;
-
-    return false;
-}
-
-pub fn isGreaterOrEqual(this: Version, other: Version) bool {
-    return this.isGreater(other) or this.equals(other);
-}
-
-pub fn isLessOrEqual(this: Version, other: Version) bool {
-    return this.isLess(other) or this.equals(other);
-}
-
-pub fn isIn(this: Version, min: Version, max: Version) bool {
-    return this.isGreaterOrEqual(min) and this.isLessOrEqual(max);
-}
-
-test parse {
+test "parse" {
     const v1 = try Version.parse("0.0.0");
     try std.testing.expectEqual(0, v1.major);
     try std.testing.expectEqual(0, v1.minor);
@@ -113,7 +113,7 @@ test parse {
     try std.testing.expectEqual(error.PatchVersionInvalid, Version.parse("1.2.3 "));
 }
 
-test of {
+test "of" {
     comptime {
         const v1 = Version.of("0.0.0");
         try std.testing.expectEqual(0, v1.major);
@@ -132,7 +132,7 @@ test of {
     }
 }
 
-test equals {
+test "equals" {
     const v1 = try Version.parse("0.0.0");
     const v2 = try Version.parse("255.255.255");
     const v3 = try Version.parse("1.2.3");
@@ -162,7 +162,7 @@ test equals {
     }
 }
 
-test isGreater {
+test "isGreater" {
     const v = try Version.parse("5.5.5");
 
     try std.testing.expect(v.isGreater(try Version.parse("5.5.4")));
@@ -172,7 +172,7 @@ test isGreater {
     try std.testing.expect(!v.isGreater(try Version.parse("5.5.5")));
 }
 
-test isLess {
+test "isLess" {
     const v = try Version.parse("5.5.5");
 
     try std.testing.expect(v.isLess(try Version.parse("5.5.6")));
@@ -182,7 +182,7 @@ test isLess {
     try std.testing.expect(!v.isLess(try Version.parse("5.5.5")));
 }
 
-test isGreaterOrEqual {
+test "isGreaterOrEqual" {
     const v = try Version.parse("5.5.5");
 
     try std.testing.expect(v.isGreaterOrEqual(try Version.parse("5.5.4")));
@@ -192,7 +192,7 @@ test isGreaterOrEqual {
     try std.testing.expect(v.isGreaterOrEqual(try Version.parse("5.5.5")));
 }
 
-test isLessOrEqual {
+test "isLessOrEqual" {
     const v = try Version.parse("5.5.5");
 
     try std.testing.expect(v.isLessOrEqual(try Version.parse("5.5.6")));
